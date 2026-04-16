@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>分配計算君</title>
+
+<style>
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto;
+    background: #f5f6fa;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+}
+
+.container {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    max-width: 400px;
+    width: 100%;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+h2 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+input {
+    width: 94%;
+    padding: 12px;
+    font-size: 18px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+}
+
+.helper {
+    margin-top: 5px;
+    font-size: 14px;
+    color: #888;
+    text-align: right;
+}
+
+button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 10px;
+    font-size: 18px;
+    border: none;
+    border-radius: 8px;
+    background: #4CAF50;
+    color: white;
+    font-weight: bold;
+}
+
+.result {
+    margin-top: 20px;
+}
+
+.card {
+    background: #fafafa;
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: 10px;
+    text-align: center;
+}
+
+.highlight {
+    font-size: 22px;
+    font-weight: bold;
+    color: #e53935;
+}
+
+.sub {
+    color: #666;
+    font-size: 14px;
+}
+
+.diff {
+    margin-top: 5px;
+    font-size: 14px;
+    color: #1e88e5;
+    font-weight: bold;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+    <h2>分配計算（手数料4% / ボーナス1%）</h2>
+
+    <input type="number" id="price" placeholder="販売額を入力" oninput="updatePreview()">
+    <div class="helper" id="preview"></div>
+
+    <button onclick="calculate()">計算する</button>
+
+    <div class="result" id="result"></div>
+</div>
+
+<script>
+// 正確な「億・万・Gold」表記
+function formatJapaneseYenExact(num) {
+    if (!num) return "";
+
+    const oku = Math.floor(num / 100000000);
+    const man = Math.floor((num % 100000000) / 10000);
+    const yen = Math.floor(num % 10000);
+
+    let result = "";
+
+    if (oku > 0) result += oku + "億";
+    if (man > 0) result += man + "万";
+    if (yen > 0 || result === "") result += yen + "Gold";
+
+    return result;
+}
+
+// 入力金額リアルタイム表示
+function updatePreview() {
+    const price = Number(document.getElementById("price").value);
+    const preview = document.getElementById("preview");
+
+    if (!price) {
+        preview.innerHTML = "";
+        return;
+    }
+
+    preview.innerHTML = formatJapaneseYenExact(price);
+}
+
+// 計算表示処理
+function calculate() {
+    const price = Number(document.getElementById("price").value);
+
+    if (!price || price <= 0) {
+        alert("正しい金額を入力してください");
+        return;
+    }
+
+    const feeRate = 0.04;
+    const bonusRate = 0.01;
+    const members = 5;
+
+    const afterFee = price * (1 - feeRate);
+    const bonus = afterFee * bonusRate;
+    const remaining = afterFee - bonus;
+    const perPerson = remaining / members;
+    const sellerTotal = bonus + perPerson;
+    const diff = sellerTotal - perPerson;
+
+    document.getElementById("result").innerHTML = `
+        <div class="card">
+            <div class="sub">手取り総額</div>
+            <div>${Math.floor(afterFee).toLocaleString()} Gold</div>
+        </div>
+
+        <div class="card">
+            <div class="sub">出品者</div>
+            <div class="highlight">
+            ${Math.floor(sellerTotal).toLocaleString()} Gold
+            （${formatJapaneseYenManOnly(sellerTotal)}）
+            </div>
+            <div class="diff">
+            ＋${Math.floor(diff).toLocaleString()} Gold
+            （${formatJapaneseYenManOnly(diff)}）</div>
+        </div>
+
+        <div class="card">
+            <div class="sub">分配額（1人あたり）</div>
+            <div class="highlight">
+                ${Math.floor(perPerson).toLocaleString()} Gold
+                （${formatJapaneseYenManOnly(perPerson)}）
+            </div>
+        </div>
+    `;
+}
+
+// 分配額用（万以下切り捨て）
+function formatJapaneseYenManOnly(num) {
+    if (!num) return "";
+
+    const oku = Math.floor(num / 100000000);
+    const man = Math.floor((num % 100000000) / 10000);
+
+    let result = "";
+
+    if (oku > 0) result += oku + "億";
+    if (man > 0) result += man + "万";
+
+    // 万未満は完全に表示しない
+    if (result === "") result = "0万";
+
+    return result;
+}
+</script>
+
+</body>
+</html>
